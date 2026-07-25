@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Website",
+    "url": "https://dispatchr.social",
+    "icon": "https://icons.duckduckgo.com/ip3/dispatchr.social.ico",
+    "slug": "website",
+    "status": "up",
+    "uptime": "100.00%",
+    "uptimeDay": "100.00%",
+    "uptimeWeek": "100.00%",
+    "uptimeMonth": "100.00%",
+    "uptimeYear": "100.00%",
+    "time": 583,
+    "timeDay": 583,
+    "timeWeek": 583,
+    "timeMonth": 583,
+    "timeYear": 583,
+    "dailyMinutesDown": {}
+  },
+  {
+    "name": "API",
+    "url": "https://dispatchr.social/api/health",
+    "icon": "https://icons.duckduckgo.com/ip3/dispatchr.social.ico",
+    "slug": "api",
+    "status": "up",
+    "uptime": "100.00%",
+    "uptimeDay": "100.00%",
+    "uptimeWeek": "100.00%",
+    "uptimeMonth": "100.00%",
+    "uptimeYear": "100.00%",
+    "time": 206,
+    "timeDay": 206,
+    "timeWeek": 206,
+    "timeMonth": 206,
+    "timeYear": 206,
+    "dailyMinutesDown": {}
+  }
+]
