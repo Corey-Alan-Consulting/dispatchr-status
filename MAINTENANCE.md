@@ -16,8 +16,9 @@ Every workflow mints a short-lived, repo-scoped token at runtime via
 keyless-consistent choice (bot identity, 1-hour tokens, not tied to a user, and
 App tokens *can* trigger the downstream workflows that `GITHUB_TOKEN` cannot).
 
-Create a **GitHub App** (org: `Corey-Alan-Consulting`), install it on this repo,
-and set two repo secrets:
+This repo has its **own dedicated GitHub App** (org: `Corey-Alan-Consulting`),
+separate from capturly-status's App — the two status repos share no
+credentials. Install this App on this repo only, and set two repo secrets:
 
 | Secret | From |
 | --- | --- |
@@ -25,19 +26,33 @@ and set two repo secrets:
 | `UPPTIME_APP_PRIVATE_KEY` | the App's generated private key (.pem contents) |
 
 Required App **repository permissions**: Contents: Read/Write, Issues:
-Read/Write, Actions: Read/Write (to trigger workflows), Metadata: Read.
+Read/Write, Actions: Read/Write (to trigger workflows), Metadata: Read. Nothing
+else — the template auto-updater is disabled, so no Workflows-write is needed.
 
 ## Deploy — Cloudflare Pages (not GitHub Pages)
 
 `site.yml` and `setup.yml` deploy the built status site
 (`site/status-page/__sapper__/export/`) to the Cloudflare Pages project
-`dispatchr-status` via
-`cloudflare/wrangler-action`. Set two more repo secrets:
+`dispatchr-status` via `cloudflare/wrangler-action`. Set two more repo secrets:
 
 | Secret | From |
 | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | token with Account → Cloudflare Pages: Edit |
 | `CLOUDFLARE_ACCOUNT_ID` | the Cloudflare account ID |
+
+### The Pages project itself is Terraform-owned — do NOT hand-create it
+
+The `dispatchr-status` Pages **project shell, the `status.dispatchr.social`
+custom domain, and its DNS CNAME** are managed by Terraform in `platform-infra`
+(`terraform/environments/prod/dispatchr-status-pages.tf`). CI here only
+*uploads build artifacts* into that project — it never creates the project,
+domain, or DNS. If the project is missing, apply the Terraform first; don't
+click-create it in the dashboard or the two will fight.
+
+That Terraform uses a **dedicated `dispatchr.social`-scoped Cloudflare token**
+(provider alias `cloudflare.dispatchr_pages`), fully separate from the
+capturly-scoped one. The `CLOUDFLARE_API_TOKEN` repo secret above (Pages:Edit,
+for the wrangler upload) can be that same token or a narrower CI-only one.
 
 ## Updating Upptime later
 
