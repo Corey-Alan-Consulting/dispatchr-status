@@ -1,0 +1,44 @@
+# Upptime configuration for the Dispatchr status page.
+# Lives in the root of the Corey-Alan-Consulting/dispatchr-status repo
+# (seeded from the customized capturly-status setup). Docs: https://upptime.js.org
+#
+# Each `sites` entry is a separate FAILURE DOMAIN so an incident points at the
+# right layer, not just "something is down".
+
+owner: Corey-Alan-Consulting
+repo: dispatchr-status
+
+sites:
+  - name: Website
+    url: https://dispatchr.social
+  - name: API
+    # /api/health pings Postgres (and reports Redis); returns 503 when the
+    # database is unreachable, so this catches a DB outage, not just a down web tier.
+    url: https://dispatchr.social/api/health
+
+status-website:
+  cname: status.dispatchr.social
+  name: Dispatchr Status
+  introTitle: "Dispatchr Status"
+  introMessage: >-
+    Live and historical availability of Dispatchr's website and API. Subscribe
+    or check here if something looks wrong.
+  navbar:
+    - title: Status
+      href: /
+    - title: Dispatchr
+      href: https://dispatchr.social
+    - title: Support
+      href: https://dispatchr.social/contact
+  logoUrl: https://dispatchr.social/logo.png
+  favicon: https://dispatchr.social/favicon.ico
+  theme: dark
+
+# GitHub user(s) auto-assigned to the auto-opened incident issues.
+assignees:
+  - NX211
+
+# Consider a downtime that lasts at least this long a real incident (seconds).
+# Filters out single-probe blips before an issue/incident is opened.
+i18n:
+  activeIncidents: Active incidents
