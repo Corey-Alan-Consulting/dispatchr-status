@@ -1,0 +1,25 @@
+# Dispatchr status page — Cloudflare Worker.
+# Deployed by .github/workflows/deploy-status.yml, which resolves __KV_ID__
+# to the real namespace id at deploy time (created on first run).
+#
+# The custom domain is auto-provisioned on deploy, but only if no DNS record
+# for status.dispatchr.social exists — delete the old GitHub Pages CNAME
+# before the first deploy (see README).
+
+name = "dispatchr-status"
+main = "src/index.mjs"
+compatibility_date = "2026-08-01"
+
+routes = [
+  { pattern = "status.dispatchr.social", custom_domain = true }
+]
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "HISTORY"
+id = "__KV_ID__"
+
+[observability]
+enabled = true
