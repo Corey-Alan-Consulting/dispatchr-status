@@ -46,21 +46,28 @@ jobs:
         run: |
           set -uo pipefail
 
-          # wrangler titles the namespace after the BINDING — "HISTORY" — not
-          # "<worker>-HISTORY" the way older versions did. Match either, so a
-          # wrangler change in either direction cannot strand this again.
+          # The namespace title MUST be worker-scoped, and the lookup must never
+          # fall back to the bare binding name.
           #
-          # This mismatch was present from the very first deploy and invisible
-          # for 34 days: the token carried no Workers permission, so the job
-          # died on the create and never reached the lookup that would also
-          # have failed. Two independent bugs, one symptom.
+          # Older wrangler auto-prefixed the worker name, so `create HISTORY`
+          # produced "<worker>-HISTORY" and each Worker got its own store.
+          # wrangler 4.151 titles it exactly what you pass, so `create HISTORY`
+          # produces one account-global namespace called "HISTORY" — and both
+          # status Workers resolved to it, shared a single KV store, and
+          # overwrote each other's `latest` and `days` keys every minute. Both
+          # status pages served the other site's probe results, alternating.
           #
-          # Output is no longer discarded. Suppressing it hid an
-          # "Authentication error [code: 10000]" here, and then hid that the
-          # namespace being created had a different title from the one being
-          # looked for. "Already exists" is the only failure worth tolerating,
-          # so everything is printed and the auth case is named explicitly.
-          create_out="$(npx --yes wrangler@4 kv namespace create HISTORY 2>&1)" || true
+          # So the name is passed explicitly. The positional argument is a
+          # NAMESPACE NAME, not a binding (wrangler has a separate --binding
+          # flag), so hyphens are fine; the binding stays "HISTORY" in
+          # wrangler.toml and only the id is substituted below.
+          NS_TITLE="${WORKER_NAME}-HISTORY"
+
+          # Output is not discarded. Suppressing it hid an "Authentication
+          # error [code: 10000]" for 34 days, and then hid that the namespace
+          # being created was titled differently from the one looked for.
+          # "Already exists" is the only failure worth tolerating.
+          create_out="$(npx --yes wrangler@4 kv namespace create "$NS_TITLE" 2>&1)" || true
           echo "$create_out"
           if echo "$create_out" | grep -qiE 'authentication error|code. 10000'; then
             echo "::error::Cloudflare rejected the API token. It needs Account > Workers Scripts:Edit and Workers KV Storage:Edit, plus Zone > Workers Routes:Edit for the custom domain declared in wrangler.toml."
@@ -72,15 +79,17 @@ jobs:
             exit 1
           fi
 
-          id="$(echo "$list" | jq -r --arg bare HISTORY --arg prefixed "${WORKER_NAME}-HISTORY" '.[] | select(.title == $bare or .title == $prefixed) | .id' | head -1)"
+          # Exact match only. Matching a bare "HISTORY" here is what made the
+          # two Workers share one store; it must stay un-matchable.
+          id="$(echo "$list" | jq -r --arg t "$NS_TITLE" '.[] | select(.title == $t) | .id' | head -1)"
 
           if [ -z "$id" ]; then
-            echo "::error::no KV namespace titled HISTORY or ${WORKER_NAME}-HISTORY. Namespaces visible to this token are listed above."
+            echo "::error::no KV namespace titled $NS_TITLE. Namespaces visible to this token:"
             echo "$list"
             exit 1
           fi
 
-          echo "resolved KV namespace $id"
+          echo "resolved KV namespace $NS_TITLE -> $id"
           sed -i "s/__KV_ID__/$id/" wrangler.toml
       - name: Deploy
         working-directory: worker
