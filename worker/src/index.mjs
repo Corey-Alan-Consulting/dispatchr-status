@@ -224,6 +224,19 @@ export default {
       });
     }
 
+    // Freshness for the GCP uptime check in platform-infra (uptime-checks.tf).
+    // A stopped probe cron leaves the page frozen but still 200 (how Upptime's
+    // feed sat at 10 Sep for weeks), so this is 503 once the last probe is 15
+    // or more minutes old.
+    if (pathname === "/healthz") {
+      const age = latest ? Date.now() - Date.parse(latest.checkedAt) : Infinity;
+      const fresh = age < 15 * 60 * 1000;
+      return new Response(JSON.stringify({ fresh, checkedAt: latest?.checkedAt ?? null }), {
+        status: fresh ? 200 : 503,
+        headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+      });
+    }
+
     if (pathname !== "/") return new Response("Not found", { status: 404 });
 
     return new Response(renderPage(latest, days), {
